@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basurama · Inventario</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+  <!-- ===== PANTALLA DE LOGIN / REGISTRO ===== -->
+  <div class="auth-screen" id="auth-screen" hidden>
+    <div class="auth-card">
+      <div class="auth-brand">
+        <span class="brand-mark"><img src="assets/logo-basurama.png" alt="Basurama"></span>
+        <span class="brand-name">Basurama <span class="brand-name-sub">· Inventario</span></span>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab is-active" data-auth-tab="login">Iniciar sesión</button>
+        <button class="auth-tab" data-auth-tab="signup">Crear cuenta</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <div class="field">
+          <label for="login-email">Correo</label>
+          <input type="email" id="login-email" placeholder="tucorreo@empresa.com" required>
+        </div>
+        <div class="field">
+          <label for="login-password">Contraseña</label>
+          <input type="password" id="login-password" required>
+        </div>
+        <p class="auth-error" id="login-error" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+      </form>
+
+      <form id="signup-form" class="auth-form" hidden>
+        <div class="field">
+          <label for="signup-email">Correo</label>
+          <input type="email" id="signup-email" placeholder="tucorreo@empresa.com" required>
+        </div>
+        <div class="field">
+          <label for="signup-password">Contraseña</label>
+          <input type="password" id="signup-password" minlength="6" required>
+        </div>
+        <p class="auth-error" id="signup-error" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block">Crear cuenta</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== PANTALLA: CUENTA SIN ROL ASIGNADO ===== -->
+  <div class="pending-screen" id="pending-screen" hidden>
+    <div class="auth-card">
+      <div class="auth-brand">
+        <span class="brand-mark"><img src="assets/logo-basurama.png" alt="Basurama"></span>
+        <span class="brand-name">Basurama <span class="brand-name-sub">· Inventario</span></span>
+      </div>
+      <h2>Tu cuenta está lista</h2>
+      <p class="pending-text">Espera a que el administrador te asigne un rol para poder entrar. En cuanto te lo asignen, vuelve a abrir la página.</p>
+      <button class="btn btn-outline btn-block" id="btn-logout-pending">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="app" id="app-root" hidden>
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark"><img src="assets/logo-basurama.png" alt="Basurama"></span>
+        <span class="brand-name nav-text">Basurama <span class="brand-name-sub">· Inventario</span></span>
+      </div>
+
+      <nav class="nav">
+        <p class="nav-label nav-text">Navegación</p>
+        <button class="nav-item is-active" data-section="racks" data-roles="administrador,gerente">
+          <svg viewBox="0 0 24 24" class="nav-icon"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          <span class="nav-text">Mapa de racks</span>
+        </button>
+        <button class="nav-item" data-section="ventas" data-roles="administrador,gerente,ventas">
+          <svg viewBox="0 0 24 24" class="nav-icon"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.6L21 8H6.2"/></svg>
+          <span class="nav-text">Ventas</span>
+        </button>
+        <button class="nav-item" data-section="caja" data-roles="administrador,gerente">
+          <svg viewBox="0 0 24 24" class="nav-icon"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M8 15h3"/></svg>
+          <span class="nav-text">Caja chica</span>
+        </button>
+        <button class="nav-item" data-section="reportes" data-roles="administrador,gerente,ventas">
+          <svg viewBox="0 0 24 24" class="nav-icon"><path d="M4 20V10"/><path d="M11 20V4"/><path d="M18 20v-7"/></svg>
+          <span class="nav-text">Reportes</span>
+        </button>
+        <button class="nav-item" data-section="materiales" data-roles="administrador,gerente">
+          <svg viewBox="0 0 24 24" class="nav-icon"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/></svg>
+          <span class="nav-text">Materiales</span>
+        </button>
+        <button class="nav-item" data-section="roles" data-roles="administrador">
+          <svg viewBox="0 0 24 24" class="nav-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="nav-text">Roles</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="sidebar-user nav-text">
+          <span id="sidebar-user-email">—</span>
+          <span class="sidebar-user-role" id="sidebar-user-role">—</span>
+        </div>
+        <button class="sidebar-logout" id="btn-logout" title="Cerrar sesión">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+
+      <!-- ---- SECCIÓN: MAPA DE RACKS ---- -->
+      <section class="view is-active" id="view-racks">
+
+        <header class="view-header">
+          <div>
+            <h1>Almacén</h1>
+            <p class="subtitle">Mapa de racks e inventario en tiempo real</p>
+          </div>
+          <button class="btn btn-primary" id="btn-nuevo-jumbo">
+            <svg viewBox="0 0 24 24" class="btn-icon"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo jumbo
+          </button>
+        </header>
+
+        <!-- sub-pestañas: mapa de racks / inventario -->
+        <div class="subtabs">
+          <button class="subtab is-active" data-subview="board">Mapa de racks</button>
+          <button class="subtab" data-subview="inventario">Inventario</button>
+        </div>
+
+        <!-- ---- SUBVISTA: MAPA DE RACKS ---- -->
+        <div class="subview is-active" id="subview-board">
+
+          <!-- pendientes por ubicar -->
+          <div class="pendientes" id="pendientes-panel" hidden>
+            <button type="button" class="pendientes-head" id="pendientes-head">
+              <span class="pendientes-dot"></span>
+              <h2>Pendientes por ubicar</h2>
+              <span class="pendientes-count" id="pendientes-count">0</span>
+              <svg viewBox="0 0 24 24" class="pendientes-chevron"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="pendientes-list" id="pendientes-list" hidden></div>
+          </div>
+
+          <!-- buscador + filtro por material -->
+          <div class="board-search-row">
+            <input type="text" id="board-buscar" class="venta-buscar" placeholder="Buscar por folio, variante o número de ubicación...">
+            <div class="board-filtro-wrap">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-board-filtro">
+                <svg viewBox="0 0 24 24" class="btn-icon"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                Filtro
+              </button>
+              <div class="board-filtro-dropdown" id="board-filtro-dropdown" hidden></div>
+            </div>
+          </div>
+
+          <!-- selector de racks -->
+          <div class="rack-toolbar">
+            <div class="rack-tabs" id="rack-tabs"></div>
+            <div class="rack-stats" id="rack-stats"></div>
+          </div>
+
+          <!-- rejilla del rack -->
+          <div class="rack-board" id="rack-board"></div>
+
+        </div>
+
+        <!-- ---- SUBVISTA: INVENTARIO ---- -->
+        <div class="subview" id="subview-inventario">
+          <div class="inv-toolbar">
+            <input type="text" id="inv-buscar" class="venta-buscar" placeholder="Buscar por folio, material o peso...">
+            <select id="inv-orden" class="inv-orden-select">
+              <option value="folio-asc">Folio (A → Z)</option>
+              <option value="folio-desc">Folio (Z → A)</option>
+              <option value="kilos-desc">Kilos (mayor → menor)</option>
+              <option value="kilos-asc">Kilos (menor → mayor)</option>
+              <option value="material-asc">Material (A → Z)</option>
+              <option value="dias-desc">Días en almacén (más → menos)</option>
+              <option value="dias-asc">Días en almacén (menos → más)</option>
+            </select>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-exportar-inv">
+              <svg viewBox="0 0 24 24" class="btn-icon"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>
+              Exportar CSV
+            </button>
+          </div>
+          <div class="inv-table-wrap">
+            <table class="inv-table">
+              <thead>
+                <tr>
+                  <th>Folio</th>
+                  <th>Material</th>
+                  <th>Kilos</th>
+                  <th>Ubicación</th>
+                  <th>Días</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody id="inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ---- SECCIONES PLACEHOLDER ---- -->
+      <section class="view" id="view-ventas">
+        <header class="view-header">
+          <div>
+            <h1>Ventas</h1>
+            <p class="subtitle">Arma pedidos, apártalos y ciérralos cuando se vendan</p>
+          </div>
+        </header>
+
+        <div class="subtabs">
+          <button class="subtab is-active" data-ventasview="armar">Armar pedido</button>
+          <button class="subtab" data-ventasview="pedidos">Pedidos <span class="subtab-count" id="pedidos-abiertos-count" hidden>0</span></button>
+          <button class="subtab" data-ventasview="historial">Historial</button>
+        </div>
+
+        <!-- ---- SUBVISTA: ARMAR PEDIDO ---- -->
+        <div class="ventas-subview is-active" id="ventasview-armar">
+          <div class="ventas-layout">
+
+            <div class="ventas-col">
+              <div class="ventas-search-row">
+                <input type="text" id="venta-buscar" class="venta-buscar" placeholder="Buscar por folio, material o variante...">
+              </div>
+              <div class="venta-chips" id="venta-chips-material"></div>
+
+              <div class="venta-lista-wrap">
+                <div class="venta-lista" id="venta-lista"></div>
+              </div>
+            </div>
+
+            <div class="ventas-col ventas-resumen">
+              <div class="resumen-card">
+                <h2>Pedido nuevo</h2>
+
+                <div class="resumen-vacio" id="resumen-vacio">Selecciona jumbos de la lista para armar el pedido.</div>
+
+                <div id="resumen-contenido" hidden>
+                  <div class="resumen-items" id="resumen-items"></div>
+
+                  <div class="resumen-total-kg">
+                    <span>Total</span>
+                    <strong id="resumen-kg-total">0 kg</strong>
+                  </div>
+                  <div class="resumen-materiales" id="resumen-materiales"></div>
+
+                  <form id="venta-form" class="venta-form">
+                    <div class="field">
+                      <label for="venta-cliente">Comprador</label>
+                      <input type="text" id="venta-cliente" placeholder="Nombre del cliente" required>
+                    </div>
+                    <div class="field-row">
+                      <div class="field">
+                        <label for="venta-fecha">Fecha del pedido</label>
+                        <input type="date" id="venta-fecha" required>
+                      </div>
+                      <div class="field">
+                        <label for="venta-precio">Precio total ($)</label>
+                        <input type="number" id="venta-precio" min="0" step="1" placeholder="0">
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="venta-limite">Fecha límite de pago</label>
+                      <input type="date" id="venta-limite" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Generar pedido</button>
+                    <p class="venta-form-nota">Al generar el pedido, estos jumbos quedan apartados en el mapa de racks. Si llega la fecha límite sin cerrarse la venta, el pedido se deshace solo y los jumbos se liberan.</p>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ---- SUBVISTA: PEDIDOS GENERADOS ---- -->
+        <div class="ventas-subview" id="ventasview-pedidos">
+          <div class="pedidos-grid" id="pedidos-grid"></div>
+        </div>
+
+        <!-- ---- SUBVISTA: HISTORIAL DE VENTAS ---- -->
+        <div class="ventas-subview" id="ventasview-historial">
+          <div class="inv-table-wrap">
+            <table class="inv-table">
+              <thead>
+                <tr>
+                  <th>Comprador</th>
+                  <th>Fecha</th>
+                  <th>Folios</th>
+                  <th>Kilos</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="historial-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-caja">
+        <header class="view-header">
+          <div>
+            <h1>Caja chica</h1>
+            <p class="subtitle">Gastos no contemplados del día a día</p>
+          </div>
+          <button class="btn btn-primary" id="btn-nuevo-gasto">
+            <svg viewBox="0 0 24 24" class="btn-icon"><path d="M12 5v14M5 12h14"/></svg>
+            Registrar gasto
+          </button>
+        </header>
+
+        <div class="kpi-row">
+          <button type="button" class="kpi-card is-active" data-periodo="dia">
+            <span class="kpi-label">Hoy</span>
+            <span class="kpi-valor" id="kpi-dia">$0</span>
+            <span class="kpi-sub" id="kpi-dia-sub">0 gastos</span>
+          </button>
+          <button type="button" class="kpi-card" data-periodo="semana">
+            <span class="kpi-label">Esta semana</span>
+            <span class="kpi-valor" id="kpi-semana">$0</span>
+            <span class="kpi-sub" id="kpi-semana-sub">0 gastos</span>
+          </button>
+          <button type="button" class="kpi-card" data-periodo="mes">
+            <span class="kpi-label">Este mes</span>
+            <span class="kpi-valor" id="kpi-mes">$0</span>
+            <span class="kpi-sub" id="kpi-mes-sub">0 gastos</span>
+          </button>
+          <button type="button" class="kpi-card" data-periodo="todo">
+            <span class="kpi-label">Historial completo</span>
+            <span class="kpi-valor" id="kpi-todo">$0</span>
+            <span class="kpi-sub" id="kpi-todo-sub">0 gastos</span>
+          </button>
+        </div>
+
+        <div class="caja-body">
+          <div class="caja-col-main">
+            <div class="caja-toolbar">
+              <input type="text" id="gasto-buscar" class="venta-buscar" placeholder="Buscar por persona, descripción o categoría...">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-exportar-gastos">
+                <svg viewBox="0 0 24 24" class="btn-icon"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+                Exportar CSV
+              </button>
+            </div>
+
+            <div class="inv-table-wrap">
+              <table class="inv-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Persona</th>
+                    <th>Descripción</th>
+                    <th>Categoría</th>
+                    <th>Monto</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="gastos-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="caja-col-side">
+            <div class="side-card">
+              <h3>Últimos 14 días</h3>
+              <div class="mini-chart" id="gastos-chart"></div>
+            </div>
+            <div class="side-card">
+              <h3>Por categoría <span class="side-card-periodo" id="cat-periodo-label">(este mes)</span></h3>
+              <div class="cat-list" id="gastos-categorias"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-reportes">
+        <header class="view-header">
+          <div>
+            <h1>Reportes</h1>
+            <p class="subtitle">Qué ha entrado, qué se ha vendido y cómo va el almacén</p>
+          </div>
+          <select id="rep-periodo" class="inv-orden-select">
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 3 meses</option>
+            <option value="180">Últimos 6 meses</option>
+            <option value="365">Último año</option>
+            <option value="0">Todo el histórico</option>
+          </select>
+        </header>
+
+        <div class="kpi-row rep-kpis" id="rep-kpis"></div>
+
+        <div class="rep-grid">
+          <div class="side-card rep-wide">
+            <h3>Kilos vendidos por periodo</h3>
+            <div class="mini-chart" id="rep-chart-kilos"></div>
+          </div>
+
+          <div class="side-card">
+            <h3>Ingresos por periodo</h3>
+            <div class="mini-chart" id="rep-chart-dinero"></div>
+          </div>
+
+          <div class="side-card">
+            <h3>Inventario actual por material</h3>
+            <div class="cat-list" id="rep-inventario-material"></div>
+          </div>
+
+          <div class="side-card">
+            <h3>Kilos vendidos por material</h3>
+            <div class="cat-list" id="rep-vendido-material"></div>
+          </div>
+
+          <div class="side-card">
+            <h3>Ocupación de racks</h3>
+            <div class="cat-list" id="rep-ocupacion"></div>
+          </div>
+
+          <div class="side-card rep-wide">
+            <h3>Mejores clientes</h3>
+            <div class="inv-table-wrap inv-table-plain">
+              <table class="inv-table">
+                <thead>
+                  <tr><th>Cliente</th><th>Pedidos</th><th>Kilos</th><th>Total</th></tr>
+                </thead>
+                <tbody id="rep-clientes"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="side-card rep-wide">
+            <h3>Jumbos con más tiempo en almacén</h3>
+            <div class="inv-table-wrap inv-table-plain">
+              <table class="inv-table">
+                <thead>
+                  <tr><th>Folio</th><th>Material</th><th>Kilos</th><th>Ubicación</th><th>Días</th></tr>
+                </thead>
+                <tbody id="rep-antiguos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-materiales">
+        <header class="view-header">
+          <div>
+            <h1>Materiales</h1>
+            <p class="subtitle">Catálogo de materiales, variantes, color de UI y costo por kg</p>
+          </div>
+          <button class="btn btn-primary" id="btn-nuevo-material">
+            <svg viewBox="0 0 24 24" class="btn-icon"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo material
+          </button>
+        </header>
+        <div class="materiales-grid" id="materiales-grid"></div>
+      </section>
+
+
+      <section class="view" id="view-roles">
+        <header class="view-header">
+          <div>
+            <h1>Roles</h1>
+            <p class="subtitle">Asigna qué puede ver y hacer cada cuenta</p>
+          </div>
+        </header>
+        <div class="inv-table-wrap">
+          <table class="inv-table">
+            <thead>
+              <tr><th>Correo</th><th>Rol actual</th><th>Asignar rol</th></tr>
+            </thead>
+            <tbody id="roles-tbody"></tbody>
+          </table>
+        </div>
+        <div class="roles-leyenda">
+          <p><strong>Administrador</strong> — acceso total, incluido este panel de roles.</p>
+          <p><strong>Gerente</strong> — acceso total menos la asignación de roles.</p>
+          <p><strong>Ventas</strong> — solo Ventas y Reportes.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== OVERLAY + DRAWERS ===== -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- drawer: registrar / editar jumbo -->
+  <aside class="drawer" id="drawer-form">
+    <div class="drawer-head">
+      <div>
+        <h2 id="form-title">Registrar nuevo cargamento</h2>
+        <p class="drawer-sub" id="form-position-sub" hidden></p>
+      </div>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <form class="drawer-body" id="jumbo-form">
+      <input type="hidden" id="f-id">
+      <input type="hidden" id="f-rack">
+      <input type="hidden" id="f-nivel">
+      <input type="hidden" id="f-seccion">
+      <input type="hidden" id="f-letra">
+
+      <div class="field">
+        <label for="f-folio">Folio</label>
+        <div class="folio-row">
+          <input type="text" id="f-folio" placeholder="Z00001" autocomplete="off" required disabled>
+          <button type="button" class="icon-btn candado-btn" id="btn-folio-lock" title="Desbloquear para editar el folio manualmente">
+            <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="f-material">Material</label>
+          <select id="f-material" required></select>
+        </div>
+        <div class="field">
+          <label for="f-variante">Variante</label>
+          <select id="f-variante" required></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-descripcion">Descripción <span class="optional">(opcional)</span></label>
+        <textarea id="f-descripcion" rows="3" placeholder="Notas adicionales sobre este jumbo..."></textarea>
+      </div>
+
+      <div class="field">
+        <label for="f-kilos">Kilos</label>
+        <input type="number" id="f-kilos" min="0" step="1" placeholder="0" required>
+      </div>
+
+      <div class="field">
+        <label for="f-fecha">Fecha de ingreso</label>
+        <input type="date" id="f-fecha" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Registrar cargamento</button>
+    </form>
+  </aside>
+
+  <!-- drawer: ficha del jumbo -->
+  <aside class="drawer" id="drawer-detalle">
+    <div class="drawer-head">
+      <div>
+        <h2>Ficha jumbo</h2>
+        <p class="drawer-sub" id="det-ubicacion-corta"></p>
+      </div>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body">
+      <div class="det-top" id="det-material-bar"></div>
+
+      <div class="det-folio-row">
+        <div class="det-folio-con-copiar">
+          <h3 id="det-folio">—</h3>
+          <button type="button" class="btn-copiar" id="det-copiar-folio" title="Copiar folio"></button>
+        </div>
+        <div class="dias-box">
+          <span class="dias-num" id="det-dias">0</span>
+          <span class="dias-label">días</span>
+        </div>
+      </div>
+
+      <div class="badges" id="det-badges"></div>
+
+      <div class="det-grid">
+        <div>
+          <p class="det-label">Fecha de ingreso</p>
+          <p class="det-value" id="det-fecha">—</p>
+        </div>
+        <div>
+          <p class="det-label">Ubicación</p>
+          <p class="det-value" id="det-ubicacion">—</p>
+        </div>
+      </div>
+
+      <div class="det-notas" id="det-notas" hidden></div>
+
+      <div class="det-actions" id="det-actions"></div>
+    </div>
+  </aside>
+
+  <!-- drawer: apartar jumbo -->
+  <aside class="drawer" id="drawer-apartar">
+    <div class="drawer-head">
+      <h2 id="apartar-title">Apartar</h2>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <form class="drawer-body" id="apartar-form">
+      <div class="field">
+        <label for="ap-cliente">Cliente</label>
+        <input type="text" id="ap-cliente" placeholder="Ej. Cliente X" required>
+      </div>
+      <div class="field">
+        <label for="ap-fecha">Fecha límite</label>
+        <input type="date" id="ap-fecha" required>
+      </div>
+      <div class="det-actions-row">
+        <button type="button" class="btn btn-outline" data-close-drawer>Cancelar</button>
+        <button type="submit" class="btn btn-dark">Apartar</button>
+      </div>
+    </form>
+  </aside>
+
+  <!-- drawer: historial del jumbo -->
+  <aside class="drawer" id="drawer-historial">
+    <div class="drawer-head">
+      <div>
+        <h2>Historial</h2>
+        <p class="drawer-sub" id="historial-folio-sub"></p>
+      </div>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body" id="historial-jumbo-body"></div>
+  </aside>
+
+  <!-- drawer: material / variantes -->
+  <aside class="drawer" id="drawer-material">
+    <div class="drawer-head">
+      <h2 id="mat-drawer-title">Nuevo material</h2>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <form class="drawer-body" id="material-form">
+      <div class="field-row">
+        <div class="field">
+          <label for="mat-nombre">Nombre del material</label>
+          <input type="text" id="mat-nombre" placeholder="Ej. LDPE" required>
+        </div>
+        <div class="field">
+          <label for="mat-color">Color de UI</label>
+          <input type="color" id="mat-color" value="#6b7280">
+        </div>
+      </div>
+      <div class="field">
+        <label for="mat-costo">Costo por kg ($)</label>
+        <input type="number" id="mat-costo" min="0" step="0.01" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Variantes</label>
+        <div class="mat-variante-add-row">
+          <input type="text" id="mat-variante-input" placeholder="Ej. Natural, Negro, Mixto...">
+          <button type="button" class="btn btn-outline btn-sm" id="mat-variante-add">Agregar</button>
+        </div>
+        <div class="material-variantes" id="mat-variantes-list"></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Guardar material</button>
+    </form>
+  </aside>
+
+
+  <!-- drawer: registrar gasto (caja chica) -->
+  <aside class="drawer" id="drawer-gasto">
+    <div class="drawer-head">
+      <h2 id="gasto-title">Registrar gasto</h2>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <form class="drawer-body" id="gasto-form">
+      <input type="hidden" id="g-id">
+      <div class="field">
+        <label for="g-persona">Gasto hecho por</label>
+        <input type="text" id="g-persona" placeholder="Nombre de la persona" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="g-descripcion">Descripción</label>
+        <textarea id="g-descripcion" rows="3" placeholder="¿En qué se usó? Ej. gasolina para el camión de recolección" required></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="g-monto">Monto ($)</label>
+          <input type="number" id="g-monto" min="0" step="0.01" placeholder="0" required>
+        </div>
+        <div class="field">
+          <label for="g-fecha">Fecha</label>
+          <input type="date" id="g-fecha" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="g-categoria">Categoría</label>
+        <select id="g-categoria">
+          <option>Combustible</option>
+          <option>Mantenimiento</option>
+          <option>Insumos</option>
+          <option>Alimentos</option>
+          <option>Transporte</option>
+          <option>Herramienta</option>
+          <option>Papelería</option>
+          <option selected>General</option>
+        </select>
+      </div>
+      <div class="gasto-quick" id="gasto-quick"></div>
+      <button type="submit" class="btn btn-primary btn-block">Guardar gasto</button>
+    </form>
+  </aside>
+
+  <!-- drawer: detalle de pedido -->
+  <aside class="drawer" id="drawer-pedido">
+    <div class="drawer-head">
+      <div>
+        <h2 id="pedido-title">Pedido</h2>
+        <p class="drawer-sub" id="pedido-sub"></p>
+      </div>
+      <button class="icon-btn" data-close-drawer>
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body" id="pedido-body"></div>
+  </aside>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- confirmación propia (reemplaza el confirm() feo del navegador) -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <p id="confirm-mensaje">¿Confirmar esta acción?</p>
+      <div class="confirm-actions">
+        <button type="button" class="btn btn-outline" id="confirm-cancelar">Cancelar</button>
+        <button type="button" class="btn btn-dark" id="confirm-aceptar">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- factura imprimible (solo visible al imprimir / guardar como PDF) -->
+  <div class="invoice-print" id="invoice-print"></div>
+
+  <!-- confeti al cerrar una venta -->
+  <div class="confetti-container" id="confetti-container"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
